@@ -435,11 +435,11 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
 
   if(PinState != GPIO_PIN_RESET)
   {
-    GPIOx->BSRR = GPIO_Pin;
+    GPIOx->BSRRL = GPIO_Pin;
   }
   else
   {
-    GPIOx->BSRR = (uint32_t)GPIO_Pin << 16;
+    GPIOx->BSRRH = GPIO_Pin;
   }
 }
 
