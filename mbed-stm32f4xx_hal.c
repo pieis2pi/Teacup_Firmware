@@ -168,15 +168,15 @@ HAL_StatusTypeDef HAL_Init(void)
 {
   /* Configure Flash prefetch, Instruction cache, Data cache */ 
 #if (INSTRUCTION_CACHE_ENABLE != 0)
-   __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
+   FLASH->ACR |= FLASH_ACR_ICEN;
 #endif /* INSTRUCTION_CACHE_ENABLE */
 
 #if (DATA_CACHE_ENABLE != 0)
-   __HAL_FLASH_DATA_CACHE_ENABLE();
+   FLASH->ACR |= FLASH_ACR_DCEN;
 #endif /* DATA_CACHE_ENABLE */
 
 #if (PREFETCH_ENABLE != 0)
-  __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+  FLASH->ACR |= FLASH_ACR_PRFTEN;
 #endif /* PREFETCH_ENABLE */
 
   /* Set Interrupt Group Priority */

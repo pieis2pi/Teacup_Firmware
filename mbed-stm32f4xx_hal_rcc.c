@@ -633,7 +633,8 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
   if(FLatency > (FLASH->ACR & FLASH_ACR_LATENCY))
   {    
     /* Program the new number of wait states to the LATENCY bits in the FLASH_ACR register */
-    __HAL_FLASH_SET_LATENCY(FLatency);
+    FLASH->ACR &= 0xFFFFFFF0; // clear
+    FLASH->ACR |= FLatency;
     
     /* Check that the new number of wait states is taken into account to access the Flash
     memory by reading the FLASH_ACR register */
@@ -819,7 +820,8 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
     }
     
     /* Program the new number of wait states to the LATENCY bits in the FLASH_ACR register */
-    __HAL_FLASH_SET_LATENCY(FLatency);
+    FLASH->ACR &= 0xFFFFFFF0; // clear
+    FLASH->ACR |= FLatency;
     
     /* Check that the new number of wait states is taken into account to access the Flash
     memory by reading the FLASH_ACR register */
