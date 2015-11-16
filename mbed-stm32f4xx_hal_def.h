@@ -45,7 +45,7 @@
 #endif
 /* Includes ------------------------------------------------------------------*/
 #include "mbed-stm32f4xx.h"
-//#include "mbed-stm32f4xx_hal_temp.h"
+#include "arduino_stm32f411.h"
 #include <stdio.h>
 
 /** 
@@ -67,6 +67,42 @@ typedef enum
   HAL_UNLOCKED = 0x00,
   HAL_LOCKED   = 0x01  
 } HAL_LockTypeDef;
+
+/*
+Old mbed-stm32f4xx_hal_gpio.h
+**/
+/** 
+  * @brief GPIO Init structure definition  
+  */ 
+typedef struct
+{
+  uint32_t Pin;       /*!< Specifies the GPIO pins to be configured.
+                           This parameter can be any value of @ref GPIO_pins_define */
+
+  uint32_t Mode;      /*!< Specifies the operating mode for the selected pins.
+                           This parameter can be a value of @ref GPIO_mode_define */
+
+  uint32_t Pull;      /*!< Specifies the Pull-up or Pull-Down activation for the selected pins.
+                           This parameter can be a value of @ref GPIO_pull_define */
+
+  uint32_t Speed;     /*!< Specifies the speed for the selected pins.
+                           This parameter can be a value of @ref GPIO_speed_define */
+
+  uint32_t Alternate;  /*!< Peripheral to be connected to the selected pins. 
+                            This parameter can be a value of @ref GPIO_Alternate_function_selection */
+}GPIO_InitTypeDef;
+
+/** 
+  * @brief  GPIO Bit SET and Bit RESET enumeration 
+  */
+typedef enum
+{
+  GPIO_PIN_RESET = 0,
+  GPIO_PIN_SET
+}GPIO_PinState;
+/* End gpio */
+
+
 
 /*
 Old mbed-stm32f4xx_hal_dma.h
