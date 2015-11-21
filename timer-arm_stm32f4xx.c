@@ -9,7 +9,8 @@
 
 #include "cmsis-core_cm4.h"
 #include "clock.h"
-
+#include "pinio.h"
+#include "dda_queue.h"
 
 /** Timer initialisation.
 
@@ -29,6 +30,10 @@ void timer_init() {
 
   Register name mapping from STM32F4xx
 
+    SYST_CSR       SysTick->CTRL     System Timer Control and status register.
+    SYST_RVR       SysTick->LOAD     System Timer Reload value register.
+    SYST_CVR       SysTick->VAL      System Timer Current value register.
+    SYST_CALIB     SysTick->CALIB    System Timer Calibration value register.
 */
   NVIC_SetPriority(SysTick_IRQn, 0);              // Highest priority.
 
@@ -39,6 +44,22 @@ void timer_init() {
   SysTick->CTRL = SysTick_CTRL_ENABLE_Msk        // Enable the ticker.
                  | SysTick_CTRL_TICKINT_Msk       // Enable interrupt.
                  | SysTick_CTRL_CLKSOURCE_Msk;    // Run at full CPU clock.
+  /**
+    Initialise the stepper timer. On ARM we have the comfort of hardware
+    32-bit timers, so we don't have to artifically extend the timer to this
+    size. We use match register 1 of the first 32-bit timer, TIM2.
+
+    We run the timer all the time, just turn the interrupt on and off, to
+    allow interrupts equally spaced, independent from processing time. See
+    also description of timer_set().
+  */
+  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;             // Turn on TIM2 power.
+
+  TIM2->CR1          &= ~(0x03FF);                // clear register
+  TIM2->CR1          |= TIM_CR1_CEN;              // Enable counter.
+
+  NVIC_SetPriority(TIM2_IRQn, 0);           // Also highest priority.
+  NVIC_EnableIRQ(TIM2_IRQn);                // Enable interrupt generally.
 }
 
 /** System clock interrupt.
@@ -52,6 +73,38 @@ void SysTick_Handler(void) {
   #ifndef __ARMEL_NOTYET__
   dda_clock();
   #endif /* __ARMEL_NOTYET__ */
+}
+
+/** Step interrupt.
+
+  Happens for every stepper motor step. Must have the same name as in
+  cmsis-startup_stm32f4xx.s
+
+  TIM2 and TIM5 are 32bit timers
+*/
+void TIM2_IRQHandler(void) {
+
+  #ifdef DEBUG_LED_PIN
+    WRITE(DEBUG_LED_PIN, 1);
+  #endif
+
+  /**
+    Turn off interrupt generation, timer counter continues. As this interrupt
+    is the only use of this timer, there's no need for a read-modify-write.
+  */
+  TIM2->DIER = 0;
+
+  /**
+    We have to "reset" this interrupt, else it'll be triggered over and over
+    again.
+  */
+  TIM2->SR = ~(TIM_SR_CC1IF);
+
+  queue_step();
+
+  #ifdef DEBUG_LED_PIN
+    WRITE(DEBUG_LED_PIN, 0);
+  #endif
 }
 
 /** Specify how long until the step timer should fire.
@@ -88,6 +141,44 @@ void SysTick_Handler(void) {
   do a sei() after it to make the interrupt actually fire.
 */
 uint8_t timer_set(int32_t delay, uint8_t check_short) {
+
+  #ifdef ACCELERATION_TEMPORAL
+    if (check_short) {
+      /**
+        100 = safe number of cpu cycles after current_time to allow a new
+        interrupt happening. This is mostly the time needed to complete the
+        current interrupt.
+
+        TIM2->CNT         = timer counter = current time.
+        TIM2->CCR1        = last capture compare = time of the last step.
+      */
+      if ((TIM2->CNT - TIM2->CCR1) + 100 > delay)
+        return 1;
+    }
+  #endif /* ACCELERATION_TEMPORAL */
+
+  /**
+    Still here? Then we can schedule the next step. Usually off of the previous
+    step. If we passed this time already, usually because this is the first
+    move after a pause, we delay off of the current time. Other than on AVR we
+    can't affort a full round through the timer here, because this round would
+    be up to 60 seconds.
+
+    TODO: this check costs time and is a plausibility check only. It'd be
+          better to reset the timer from elsewhere when starting a movement
+          after a pause.
+  */
+  if (TIM2->CNT - TIM2->CCR1 > delay - 100)
+    TIM2->CCR1 = TIM2->CNT + delay;
+  else
+    TIM2->CCR1 += delay;
+
+  /**
+    Turn on the stepper interrupt. As this interrupt is the only use of this
+    timer, there's no need for a read-modify-write.
+  */
+  TIM2->DIER = TIM_DIER_CC1IE;                    // Interrupt on MR0 match.
+
   return 0;
 }
 
