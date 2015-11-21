@@ -19,6 +19,13 @@
 
   For the system clock, we use SysTickTimer. This timer is made for exactly
   such purposes.
+
+  Other than AVRs, Cortex-M doesn't allow reentry of interupts. To deal with
+  this we use another interrupt, PendSV, with slightly lower priority and
+  without an interrupt source. The possibly lengthy operation in dda_clock()
+  goes into there and at the end of the SysTick interrupt we simply set PendSV
+  pending. This way PendSV is executed right after SysTick or, if PendSV is
+  already running, ignored.
 */
 void timer_init() {
 
@@ -44,6 +51,12 @@ void timer_init() {
   SysTick->CTRL = SysTick_CTRL_ENABLE_Msk        // Enable the ticker.
                  | SysTick_CTRL_TICKINT_Msk       // Enable interrupt.
                  | SysTick_CTRL_CLKSOURCE_Msk;    // Run at full CPU clock.
+
+  /**
+    Initialise PendSV for dda_clock().
+  */
+  NVIC_SetPriority(PendSV_IRQn, 1);               // Almost highest priority.
+
   /**
     Initialise the stepper timer. On ARM we have the comfort of hardware
     32-bit timers, so we don't have to artifically extend the timer to this
@@ -65,20 +78,29 @@ void timer_init() {
 /** System clock interrupt.
 
   Happens every TICK_TIME. Must have the same name as in
-  cmsis-startup_lpc11xx.s
+  cmsis-startup_stm32f411xe.s
 */
 void SysTick_Handler(void) {
 
   clock_tick();
-  #ifndef __ARMEL_NOTYET__
+
+  SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;             // Trigger PendSV_Handler().
+
+}
+
+/** System clock interrupt, slow part.
+
+  Here we do potentially lengthy calculations. Must have the same name as in
+  cmsis-startup_stm32f411xe.s
+*/
+void PendSV_Handler(void) {
   dda_clock();
-  #endif /* __ARMEL_NOTYET__ */
 }
 
 /** Step interrupt.
 
   Happens for every stepper motor step. Must have the same name as in
-  cmsis-startup_stm32f4xx.s
+  cmsis-startup_stm32f411xe.s
 
   TIM2 and TIM5 are 32bit timers
 */
