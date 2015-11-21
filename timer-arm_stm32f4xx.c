@@ -139,9 +139,7 @@ void TIM2_IRQHandler(void) {
          usually wants to handle this case.
 
          Calls from elsewhere should set it to 0. In this case a timer
-         interrupt is always scheduled. At the risk that this scheduling
-         doesn't delay the requested time, but up to a full timer counter
-         overflow ( = 65536 / F_CPU = 3 to 4 milliseconds).
+         interrupt is always scheduled.
 
   \return A flag whether the requested time was too short to allow scheduling
           an interrupt. This is meaningful for ACCELERATION_TEMPORAL, where
@@ -161,6 +159,10 @@ void TIM2_IRQHandler(void) {
   So, if you use it from inside the step interrupt, make sure to do so
   as late as possible. If you use it from outside the step interrupt,
   do a sei() after it to make the interrupt actually fire.
+
+  On ARM we have the comfort of hardware 32-bit timers, so we don't have to
+  artifically extend the timer to this size. We use match register 1 of the
+  first 32-bit timer, TIM2.
 */
 uint8_t timer_set(int32_t delay, uint8_t check_short) {
 
@@ -180,28 +182,32 @@ uint8_t timer_set(int32_t delay, uint8_t check_short) {
   #endif /* ACCELERATION_TEMPORAL */
 
   /**
-    Still here? Then we can schedule the next step. Usually off of the previous
-    step. If we passed this time already, usually because this is the first
-    move after a pause, we delay off of the current time. Other than on AVR we
-    can't affort a full round through the timer here, because this round would
-    be up to 60 seconds.
-
-    TODO: this check costs time and is a plausibility check only. It'd be
-          better to reset the timer from elsewhere when starting a movement
-          after a pause.
+    Still here? Then we can schedule the next step. Off of the previous step.
+    If there is no previous step, CNT and CCR1 should have been reset to zero
+    by calling timer_reset() shortly before we arrive here.
   */
-  if (TIM2->CNT - TIM2->CCR1 > delay - 100)
-    TIM2->CCR1 = TIM2->CNT + delay;
-  else
-    TIM2->CCR1 += delay;
+  TIM2->CCR1 += delay;
 
   /**
     Turn on the stepper interrupt. As this interrupt is the only use of this
     timer, there's no need for a read-modify-write.
   */
-  TIM2->DIER = TIM_DIER_CC1IE;                    // Interrupt on MR0 match.
+  TIM2->DIER = TIM_DIER_CC1IE;                    // Interrupt on CCR1 match.
 
   return 0;
+}
+
+/** Timer reset.
+
+  Reset the timer, so step interrupts scheduled at an arbitrary point in time
+  don't lead to a full round through the timer counter.
+
+  On ARM we actually do something, such a full round through the timer is
+  2^32 / F_CPU = 22 to 44 seconds.
+*/
+void timer_reset() {
+  TIM2->CNT = 0;
+  TIM2->CCR1 = 0;
 }
 
 /** Stop timers.
