@@ -73,6 +73,10 @@
     #include "arduino_lpc1114.h"
   #endif
 
+  #if defined (__ARM_STM32F411__)
+    #include "arduino_stm32f411.h"
+  #endif
+
 #elif defined SIMULATOR
 
   #include "simulator.h"
