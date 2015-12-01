@@ -11,7 +11,7 @@
   functions, spread over various files, slow execution (pin toggling about
   15 times slower than what we have here).
 
-  FASTIO by setting the BSRR (bit set/reset register), 
+  FASTIO by setting the BSRR (bit set/reset register),
   - Bit0-15 to set
   - Bit16-31 to reset.
 
@@ -40,27 +40,35 @@
 
 #define PIOA_0_PIN      0
 #define PIOA_0_PORT     GPIOA
+#define PIOA_0_ADC      0
 
 #define PIOA_1_PIN      1
 #define PIOA_1_PORT     GPIOA
+#define PIOA_1_ADC      1
 
 #define PIOA_2_PIN      2
 #define PIOA_2_PORT     GPIOA
+#define PIOA_2_ADC      2
 
 #define PIOA_3_PIN      3
 #define PIOA_3_PORT     GPIOA
+#define PIOA_3_ADC      3
 
 #define PIOA_4_PIN      4
 #define PIOA_4_PORT     GPIOA
+#define PIOA_4_ADC      4
 
 #define PIOA_5_PIN      5
 #define PIOA_5_PORT     GPIOA
+#define PIOA_5_ADC      5
 
 #define PIOA_6_PIN      6
 #define PIOA_6_PORT     GPIOA
+#define PIOA_6_ADC      6
 
 #define PIOA_7_PIN      7
 #define PIOA_7_PORT     GPIOA
+#define PIOA_7_ADC      7
 
 #define PIOA_8_PIN      8
 #define PIOA_8_PORT     GPIOA
@@ -88,9 +96,11 @@
 
 #define PIOB_0_PIN      0
 #define PIOB_0_PORT     GPIOB
+#define PIOB_0_ADC      8
 
 #define PIOB_1_PIN      1
 #define PIOB_1_PORT     GPIOB
+#define PIOB_1_ADC      9
 
 #define PIOB_2_PIN      2
 #define PIOB_2_PORT     GPIOB
@@ -133,21 +143,27 @@
 
 #define PIOC_0_PIN      0
 #define PIOC_0_PORT     GPIOC
+#define PIOC_0_ADC      10
 
 #define PIOC_1_PIN      1
 #define PIOC_1_PORT     GPIOC
+#define PIOC_1_ADC      11
 
 #define PIOC_2_PIN      2
 #define PIOC_2_PORT     GPIOC
+#define PIOC_2_ADC      12
 
 #define PIOC_3_PIN      3
 #define PIOC_3_PORT     GPIOC
+#define PIOC_3_ADC      13
 
 #define PIOC_4_PIN      4
 #define PIOC_4_PORT     GPIOC
+#define PIOC_4_ADC      14
 
 #define PIOC_5_PIN      5
 #define PIOC_5_PORT     GPIOC
+#define PIOC_5_ADC      15
 
 #define PIOC_6_PIN      6
 #define PIOC_6_PORT     GPIOC
